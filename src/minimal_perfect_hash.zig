@@ -114,6 +114,5 @@ pub fn getIndex(self: *Self, key: []const u8) ?usize {
     const displacement = self.displacement_table[hash(key, 0, self.n)];
     const pos: usize = if (displacement < 0) @intCast(-displacement - 1) else hash(key, @intCast(displacement), self.n);
     const idx = self.values[pos];
-    std.debug.print("{s}:{s}\n", .{ key, self.keys[idx] });
     return if (std.mem.eql(u8, key, self.keys[idx])) idx else null;
 }

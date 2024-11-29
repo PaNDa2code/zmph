@@ -15,6 +15,7 @@ pub fn build(b: *std.Build) void {
     b.installArtifact(lib);
 
     const test_step = b.step("test", "Run unit tests");
+    const benchmark_step = b.step("benchmark", "Run benchmarks");
 
     const unit_tests = b.addTest(.{
         .root_source_file = b.path("src/test.zig"),
@@ -22,6 +23,16 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
+    const lib_benchmark = b.addExecutable(.{
+        .name = "benchmark",
+        .root_source_file = b.path("src/bench.zig"),
+        .target = target,
+        .optimize = .ReleaseFast,
+    });
+
     const run_lib_unit_tests = b.addRunArtifact(unit_tests);
     test_step.dependOn(&run_lib_unit_tests.step);
+
+    const run_lib_benchmark = b.addRunArtifact(lib_benchmark);
+    benchmark_step.dependOn(&run_lib_benchmark.step);
 }
