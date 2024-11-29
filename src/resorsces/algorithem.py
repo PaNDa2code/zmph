@@ -4,7 +4,7 @@
 # Date: 2024-11-29
 # Inspired by: [Steve Hanov] https://stevehanov.ca/blog/?id=119
 
-from fnvhash import fnv1a_32
+import mmh3
 
 class MinimalPerfectHash:
     def __init__(self, data: dict[str, int]):
@@ -12,9 +12,9 @@ class MinimalPerfectHash:
         # Initialize buckets and tables
         buckets = [[] for _ in range(size)]
 
-        self.intermediate_table = [None] * size
+        self.intermediated_table = [None] * size
         self.values = [None] * size
-        self.hash = lambda d, s : fnv1a_32(s.encode(), d)
+        self.hash = lambda d, s : mmh3.hash(s, d, False)
 
         # Place keys into buckets
         for key in data.keys():
@@ -39,7 +39,7 @@ class MinimalPerfectHash:
                     slots.append(slot)
                     item += 1
 
-            self.intermediate_table[self.hash(0, bucket[0]) % size] = displacement
+            self.intermediated_table[self.hash(0, bucket[0]) % size] = displacement
 
             for i in range(len(bucket)):
                 self.values[slots[i]] = data[bucket[i]]
@@ -50,13 +50,12 @@ class MinimalPerfectHash:
         for bucket in buckets[bucket_index:]:
             if len(bucket) == 0:
                 continue
-
             slot = free_slots.pop()
-            self.intermediate_table[self.hash(0, bucket[0]) % size] = -slot - 1
+            self.intermediated_table[self.hash(0, bucket[0]) % size] = -slot - 1
             self.values[slot] = data[bucket[0]]
 
     def PerfectLookup(self, key):
-        displacement = self.intermediate_table[self.hash(0, key) % len(self.intermediate_table)]
+        displacement = self.intermediated_table[self.hash(0, key) % len(self.intermediated_table)]
         if displacement < 0: return self.values[-displacement-1]
         return self.values[self.hash(displacement, key) % len(self.values)]
 
@@ -71,6 +70,7 @@ if __name__ == "__main__":
     for key in data.keys():
         expicted_value = data[key]
         lookup_value = mph.PerfectLookup(key)
+        # print(f"{key}:{lookup_value}")
         if expicted_value != lookup_value:
             print("mismatch lookup\n")
             exit(1)
