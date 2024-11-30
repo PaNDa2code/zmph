@@ -8,9 +8,14 @@ test "CHDMinimalPerfectHash" {
     defer mphf.deinit();
 
     for (keys) |key| {
-        if (mphf.getIndex(key) == null) {
-            @panic("getIndex() returns null position");
-        }
+        try std.testing.expect(mphf.getIndex(key) != null);
+    }
+}
+
+test "ComptimeCHDMinimalPerfectHash" {
+    const mphf = try MinimalPHF.comptimeInit(&keys);
+    for (keys) |key| {
+        try std.testing.expect(mphf.getIndex(key) != null);
     }
 }
 

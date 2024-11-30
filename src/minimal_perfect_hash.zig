@@ -3,19 +3,124 @@ const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 
 const Self = @This();
-const usize_max = 1 << 32;
+const usize_max: comptime_int = 1 << 32;
 
 keys: []const []const u8,
-n: usize,
-displacement_table: []isize,
-values: []usize,
-allocator: Allocator,
+n: usize = 0,
+displacement_table: []isize = undefined,
+values: []usize = undefined,
+allocator: Allocator = undefined,
 
 inline fn hash(key: []const u8, seed: u32, mod_value: usize) usize {
     return std.hash.Murmur3_32.hashWithSeed(key, seed) % mod_value;
 }
 
 const Bucket = ArrayList(usize);
+
+fn staticList(comptime T: type, comptime n: usize, comptime fill: T) type {
+    return struct {
+        items: [n]T = [_]T{fill} ** n,
+        len: usize = 0,
+        fn decOrder(_: void, lhs: @This(), rhs: @This()) bool {
+            return lhs.len > rhs.len;
+        }
+        fn append(self: *@This(), value: T) void {
+            self.items[self.len] = value;
+            self.len += 1;
+        }
+        fn pop(self: *@This()) T {
+            self.len -= 1;
+            return self.items[self.len];
+        }
+        fn clear(self: *@This()) void {
+            // @memset(self.items, 0);
+            self.len = 0;
+        }
+        fn has(self: *@This(), value: T) bool {
+            for (self.items) |item| {
+                if (value == item) return true;
+            }
+            return false;
+        }
+        fn toOwendSlice(self: *@This()) [n]T {
+            return self.items;
+        }
+    };
+}
+
+pub inline fn comptimeInit(comptime keys: []const []const u8) !Self {
+    comptime {
+        @setEvalBranchQuota(1_000_000);
+        const n = keys.len;
+
+        const BucketComptime = staticList(usize, n, 0);
+
+        var buckets = staticList(BucketComptime, n, .{}){};
+
+        for (keys, 0..) |key, key_index| {
+            buckets.items[hash(key, 0, n)].append(key_index);
+        }
+
+        std.mem.sort(BucketComptime, &buckets.items, {}, BucketComptime.decOrder);
+
+        var slots = staticList(usize, n, 0){};
+        var displacement_table = staticList(isize, n, 0){};
+        var values = staticList(usize, n, usize_max){};
+
+        var bucket_index: usize = 0;
+
+        for (buckets.items, 0..) |bucket, bucket_idx| {
+            bucket_index = bucket_idx;
+            if (bucket.len <= 1) break;
+
+            var displacement: u32 = 1;
+            var item: usize = 0;
+            slots.clear();
+
+            while (item < bucket.len) {
+                const slot = hash(keys[bucket.items[item]], displacement, n);
+
+                if (values.items[slot] != usize_max or slots.has(slot)) {
+                    displacement += 1;
+                    item = 0;
+                    slots.clear();
+                } else {
+                    slots.append(slot);
+                    item += 1;
+                }
+            }
+
+            displacement_table.items[hash(keys[bucket.items[0]], 0, n)] = @intCast(displacement);
+
+            for (0..bucket.len) |i| {
+                values.items[slots.items[i]] = bucket.items[i];
+            }
+        }
+
+        var free_slots = staticList(usize, n, 0){};
+        for (values.items, 0..) |val, i| {
+            if (val == usize_max)
+                free_slots.append(i);
+        }
+
+        for (buckets.items[bucket_index..]) |bucket| {
+            if (bucket.len == 0) continue;
+            const slot = free_slots.pop();
+            displacement_table.items[hash(keys[bucket.items[0]], 0, n)] = -@as(isize, @intCast(slot)) - 1;
+            values.items[slot] = bucket.items[0];
+        }
+
+        const _values = values.items;
+        const _dispacement_table = displacement_table.items;
+
+        return .{
+            .n = n,
+            .keys = keys,
+            .values = @ptrCast(@constCast(&_values)),
+            .displacement_table = @ptrCast(@constCast(&_dispacement_table)),
+        };
+    }
+}
 
 pub fn init(allocator: Allocator, keys: []const []const u8) !Self {
     const self = Self{
@@ -110,9 +215,10 @@ fn bucketDecOrder(_: void, lhs: Bucket, rhs: Bucket) bool {
     return lhs.items.len > rhs.items.len;
 }
 
-pub fn getIndex(self: *Self, key: []const u8) ?usize {
+pub fn getIndex(self: *const Self, key: []const u8) ?usize {
     const displacement = self.displacement_table[hash(key, 0, self.n)];
     const pos: usize = if (displacement < 0) @intCast(-displacement - 1) else hash(key, @intCast(displacement), self.n);
     const idx = self.values[pos];
+    // if (idx == usize_max) return null;
     return if (std.mem.eql(u8, key, self.keys[idx])) idx else null;
 }

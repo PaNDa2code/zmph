@@ -24,12 +24,12 @@ pub fn main() !void {
     }
 
     const tik = time.nanoTimestamp();
-    var mphf = try MinimalPHF.init(allocator, words.items);
+    var mphf_runtime = try MinimalPHF.init(allocator, words.items);
     const tok = time.nanoTimestamp();
-    defer mphf.deinit();
+    defer mphf_runtime.deinit();
 
     for (words.items) |word| {
-        if (mphf.getIndex(word) == null) @panic("getIndex() returns null value");
+        if (mphf_runtime.getIndex(word) == null) @panic("getIndex() returns null value");
     }
     const tok2 = time.nanoTimestamp();
 
@@ -37,7 +37,7 @@ pub fn main() !void {
     const elapsed_lookup = tok2 - tok;
     const elapsed_per_lookup = @divFloor(elapsed_lookup, words.items.len);
 
-    std.debug.print("---- Benchmark Results ----\n", .{});
+    std.debug.print("---- Run time Initialization ----\n", .{});
     std.debug.print("Keys processed: {} strings\n", .{words.items.len});
     printWithUnits("Initialization time", elapsed_init);
     printWithUnits("Lookup time", elapsed_lookup);

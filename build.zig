@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
 
     const lib = b.addSharedLibrary(.{
         .name = "MinimalPerfectHash",
-        .root_source_file = b.path("src/chd_minimal_perfect_hash.zig"),
+        .root_source_file = b.path("src/minimal_perfect_hash.zig"),
         .target = target,
         .optimize = optimize,
     });
