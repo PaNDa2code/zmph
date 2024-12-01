@@ -1,12 +1,12 @@
 const std = @import("std");
 const time = std.time;
-const MinimalPHF = @import("minimal_perfect_hash.zig");
+const MinimalPerfectHashMap = @import("minimal_perfect_hash.zig").MinimalPerfectHashMap;
 const zbench = @import("zbench");
 
-var word_list: []const []const u8 = undefined;
+var word_list: []struct { []const u8, void } = undefined;
 var word_idx: usize = 0;
 
-var mphf: MinimalPHF = undefined;
+var mphf: MinimalPerfectHashMap([]const u8, void) = undefined;
 var static_map: std.static_string_map.StaticStringMap(void) = .{};
 var hash_map: std.StringHashMap(void) = undefined;
 
@@ -28,16 +28,16 @@ pub fn main() !void {
     defer allocator.free(buffer);
 
     var iter = std.mem.tokenizeAny(u8, buffer, "\n");
-    var words = std.ArrayList([]const u8).init(allocator);
+    var words = std.ArrayList(struct { []const u8, void }).init(allocator);
     defer words.deinit();
 
     while (iter.next()) |word| {
-        try words.append(word);
+        try words.append(.{ word, {} });
     }
 
     word_list = words.items;
 
-    var bench = zbench.Benchmark.init(allocator, .{ .track_allocations = true });
+    var bench = zbench.Benchmark.init(allocator, .{ .track_allocations = false });
     defer bench.deinit();
 
     try bench.add("Perfect-hash build", benchmarkInit, .{ .hooks = .{
@@ -56,7 +56,7 @@ pub fn main() !void {
         .after_all = StaticHashmapAfter,
         .after_each = nextWord,
     } });
-    try bench.add("StringHashMap build (std)", StdHashmapBuild, .{ .hooks = .{
+    try bench.add("StringHashMap build", StdHashmapBuild, .{ .hooks = .{
         .after_each = StdHashmapAfter,
     } });
     try bench.add("StringHashMap Lookup", StdHashmapLookup, .{ .hooks = .{
@@ -73,7 +73,7 @@ fn nextWord() void {
 
 // |------------------- Minimal perfect hash bench functions ----------------|
 fn benchmarkInit(allocator: std.mem.Allocator) void {
-    mphf = MinimalPHF.init(allocator, word_list) catch unreachable;
+    mphf = @TypeOf(mphf).init(allocator, word_list) catch unreachable;
 }
 
 fn MinimalPHF_After() void {
@@ -81,21 +81,16 @@ fn MinimalPHF_After() void {
 }
 
 fn MinimalPHF_Before() void {
-    mphf = MinimalPHF.init(glop_allocator, word_list) catch unreachable;
+    mphf = @TypeOf(mphf).init(glop_allocator, word_list) catch unreachable;
 }
 
 fn benchmarkLookup(_: std.mem.Allocator) void {
-    _ = mphf.getIndex(word_list[word_idx]);
+    _ = mphf.getIndex(word_list[word_idx].@"0");
 }
 
 // |------------------- StaticStringMap bench functions ---------------------|
 fn StaticMapInit(allocator: std.mem.Allocator) void {
-    var kv = allocator.alloc(struct { @"0": []const u8 }, word_list.len) catch unreachable;
-    defer allocator.free(kv);
-    for (word_list, 0..) |word, i| {
-        kv[i].@"0" = word;
-    }
-    static_map = @TypeOf(static_map).init(kv, allocator) catch unreachable;
+    static_map = @TypeOf(static_map).init(word_list, allocator) catch unreachable;
 }
 
 fn StaticHashmapAfter() void {
@@ -107,14 +102,14 @@ fn StaticHashmapBefore() void {
 }
 
 fn StaticMapLookup(_: std.mem.Allocator) void {
-    _ = static_map.get(word_list[word_idx]);
+    _ = static_map.get(word_list[word_idx].@"0");
 }
 
 // |----------------- StdHashMap bench functions -------------------------|
 fn StdHashmapBuild(allocator: std.mem.Allocator) void {
     hash_map = @TypeOf(hash_map).init(allocator);
     for (word_list) |word| {
-        hash_map.put(word, {}) catch unreachable;
+        hash_map.put(word.@"0", {}) catch unreachable;
     }
 }
 
@@ -127,5 +122,5 @@ fn StdHashmapAfter() void {
 }
 
 fn StdHashmapLookup(_: std.mem.Allocator) void {
-    _ = hash_map.get(word_list[word_idx]);
+    _ = hash_map.get(word_list[word_idx].@"0");
 }

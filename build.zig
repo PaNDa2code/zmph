@@ -32,10 +32,10 @@ pub fn build(b: *std.Build) void {
         .optimize = .ReleaseFast,
     });
 
-    lib_benchmark.root_module.addImport("zbench", zbench.module("zbench"));
     const run_lib_unit_tests = b.addRunArtifact(unit_tests);
     test_step.dependOn(&run_lib_unit_tests.step);
 
+    lib_benchmark.root_module.addImport("zbench", zbench.module("zbench"));
     const run_lib_benchmark = b.addRunArtifact(lib_benchmark);
     benchmark_step.dependOn(&run_lib_benchmark.step);
 }
