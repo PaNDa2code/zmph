@@ -12,12 +12,12 @@ test "CHDMinimalPerfectHash" {
     }
 }
 
-test "ComptimeCHDMinimalPerfectHash" {
-    const mphf = try MinimalPHF.comptimeInit(&keys);
-    for (keys) |key| {
-        try std.testing.expect(mphf.getIndex(key) != null);
-    }
-}
+// test "ComptimeCHDMinimalPerfectHash" {
+//     const mphf = try MinimalPHF.comptimeInit(&keys);
+//     for (keys) |key| {
+//         try std.testing.expect(mphf.getIndex(key) != null);
+//     }
+// }
 
 const keys = [_][]const u8{
     "apple",

@@ -5,6 +5,8 @@ pub fn build(b: *std.Build) void {
 
     const optimize = b.standardOptimizeOption(.{});
 
+    const zbench = b.dependency("zbench", .{});
+
     const lib = b.addSharedLibrary(.{
         .name = "MinimalPerfectHash",
         .root_source_file = b.path("src/minimal_perfect_hash.zig"),
@@ -30,6 +32,7 @@ pub fn build(b: *std.Build) void {
         .optimize = .ReleaseFast,
     });
 
+    lib_benchmark.root_module.addImport("zbench", zbench.module("zbench"));
     const run_lib_unit_tests = b.addRunArtifact(unit_tests);
     test_step.dependOn(&run_lib_unit_tests.step);
 

@@ -11,8 +11,8 @@ displacement_table: []isize = undefined,
 values: []usize = undefined,
 allocator: Allocator = undefined,
 
-inline fn hash(key: []const u8, seed: u32, mod_value: usize) usize {
-    return std.hash.Murmur3_32.hashWithSeed(key, seed) % mod_value;
+inline fn hash(key: anytype, seed: u32, mod_value: usize) usize {
+    return std.hash.Murmur3_32.hashWithSeed(std.mem.asBytes(&key), seed) % mod_value;
 }
 
 const Bucket = ArrayList(usize);
@@ -41,9 +41,6 @@ fn staticList(comptime T: type, comptime n: usize, comptime fill: T) type {
                 if (value == item) return true;
             }
             return false;
-        }
-        fn toOwendSlice(self: *@This()) [n]T {
-            return self.items;
         }
     };
 }
@@ -149,11 +146,12 @@ pub fn init(allocator: Allocator, keys: []const []const u8) !Self {
     }
 
     // Step 2: Sort buckets by size in descending order
-    std.mem.sort(Bucket, buckets, {}, bucketDecOrder);
+    // std.mem.sort(Bucket, buckets, {}, bucketDecOrder);
 
     // Step 3: Resolve collisions with displacement
-    var slots = ArrayList(usize).init(allocator);
-    defer slots.deinit();
+    var slot_version: u32 = 0;
+    var slots = try allocator.alloc(u32, keys.len);
+    defer allocator.free(slots);
 
     var bucket_index: usize = 0;
     for (buckets, 0..) |bucket, idx| {
@@ -162,18 +160,18 @@ pub fn init(allocator: Allocator, keys: []const []const u8) !Self {
 
         var displacement: u32 = 1;
         var item: usize = 0;
-        slots.clearRetainingCapacity(); // Clear slots list for each new displacement
 
         while (item < bucket.items.len) {
             const slot = hash(self.keys[bucket.items[item]], displacement, self.n);
 
             // If slot is occupied, try a new displacement
-            if (self.values[slot] != usize_max or std.mem.containsAtLeast(usize, slots.items, 1, &.{slot})) {
+            if (self.values[slot] != usize_max or slots[slot] == slot_version) {
+                // Reset to start over with a new displacement
                 displacement += 1;
-                item = 0; // Reset to start over with a new displacement
-                slots.clearRetainingCapacity(); // Clear slots to retry finding a slot
+                slot_version += 1;
+                item = 0;
             } else {
-                try slots.append(slot);
+                slots[slot] = slot_version;
                 item += 1;
             }
         }
@@ -183,7 +181,8 @@ pub fn init(allocator: Allocator, keys: []const []const u8) !Self {
 
         // Assign slots to the values array
         for (0..bucket.items.len) |i| {
-            self.values[slots.items[i]] = bucket.items[i];
+            if (slots[i] == slot_version)
+                self.values[i] = bucket.items[i];
         }
     }
 
@@ -217,8 +216,10 @@ fn bucketDecOrder(_: void, lhs: Bucket, rhs: Bucket) bool {
 
 pub fn getIndex(self: *const Self, key: []const u8) ?usize {
     const displacement = self.displacement_table[hash(key, 0, self.n)];
-    const pos: usize = if (displacement < 0) @intCast(-displacement - 1) else hash(key, @intCast(displacement), self.n);
-    const idx = self.values[pos];
-    // if (idx == usize_max) return null;
-    return if (std.mem.eql(u8, key, self.keys[idx])) idx else null;
+    const index: usize = if (displacement < 0) @intCast(-displacement - 1) else hash(key, @intCast(displacement), self.n);
+    return if (std.mem.eql(u8, key, self.keys[index])) index else null;
+}
+
+pub fn get(self: *const Self, key: []const u8) ?usize {
+    return self.values[self.getIndex(key) orelse return null];
 }
