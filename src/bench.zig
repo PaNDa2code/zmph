@@ -37,7 +37,7 @@ pub fn main() !void {
 
     word_list = words.items;
 
-    var bench = zbench.Benchmark.init(allocator, .{ .time_budget_ns = 1e9 });
+    var bench = zbench.Benchmark.init(allocator, .{ .track_allocations = true });
     defer bench.deinit();
 
     try bench.add("Perfect-hash build", benchmarkInit, .{ .hooks = .{
@@ -48,10 +48,10 @@ pub fn main() !void {
         .after_all = MinimalPHF_After,
         .after_each = nextWord,
     } });
-    try bench.add("StaticStringMap build (std)", StaticMapInit, .{ .hooks = .{
+    try bench.add("StaticStringMap build", StaticMapInit, .{ .hooks = .{
         .after_each = StaticHashmapAfter,
     } });
-    try bench.add("StaticStringMap  Lookup", StaticMapLookup, .{ .hooks = .{
+    try bench.add("StaticStringMap Lookup", StaticMapLookup, .{ .hooks = .{
         .before_all = StaticHashmapBefore,
         .after_all = StaticHashmapAfter,
         .after_each = nextWord,

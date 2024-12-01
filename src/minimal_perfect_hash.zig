@@ -11,8 +11,8 @@ displacement_table: []isize = undefined,
 values: []usize = undefined,
 allocator: Allocator = undefined,
 
-inline fn hash(key: anytype, seed: u32, mod_value: usize) usize {
-    return std.hash.Murmur3_32.hashWithSeed(std.mem.asBytes(&key), seed) % mod_value;
+inline fn hash(key: []const u8, seed: u32, mod_value: usize) usize {
+    return std.hash.Murmur3_32.hashWithSeed(key, seed) % mod_value;
 }
 
 const Bucket = ArrayList(usize);
@@ -104,7 +104,7 @@ pub inline fn comptimeInit(comptime keys: []const []const u8) !Self {
             if (bucket.len == 0) continue;
             const slot = free_slots.pop();
             displacement_table.items[hash(keys[bucket.items[0]], 0, n)] = -@as(isize, @intCast(slot)) - 1;
-            values.items[slot] = bucket.items[0];
+            values.items[slot] = 0;
         }
 
         const _values = values.items;
@@ -216,8 +216,8 @@ fn bucketDecOrder(_: void, lhs: Bucket, rhs: Bucket) bool {
 
 pub fn getIndex(self: *const Self, key: []const u8) ?usize {
     const displacement = self.displacement_table[hash(key, 0, self.n)];
-    const index: usize = if (displacement < 0) @intCast(-displacement - 1) else hash(key, @intCast(displacement), self.n);
-    return if (std.mem.eql(u8, key, self.keys[index])) index else null;
+    const slot: usize = if (displacement < 0) @intCast(-displacement - 1) else hash(key, @intCast(displacement), self.n);
+    return slot;
 }
 
 pub fn get(self: *const Self, key: []const u8) ?usize {
