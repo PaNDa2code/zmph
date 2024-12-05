@@ -1,7 +1,10 @@
 const std = @import("std");
 const time = std.time;
-const MinimalPerfectHashMap = @import("minimal_perfect_hash.zig").MinimalPerfectHashMap;
 const zbench = @import("zbench");
+
+const zmph = @import("zmph");
+
+const MinimalPerfectHashMap = zmph.MinimalPerfectHashMap;
 
 var word_list: []struct { []const u8, void } = undefined;
 var word_idx: usize = 0;
@@ -40,10 +43,10 @@ pub fn main() !void {
     var bench = zbench.Benchmark.init(allocator, .{ .track_allocations = false });
     defer bench.deinit();
 
-    try bench.add("Perfect-hash build", benchmarkInit, .{ .hooks = .{
+    try bench.add("zmph build", benchmarkInit, .{ .hooks = .{
         .after_each = MinimalPHF_After,
     } });
-    try bench.add("Perfect-hash Lookup", benchmarkLookup, .{ .hooks = .{
+    try bench.add("zmph Lookup", benchmarkLookup, .{ .hooks = .{
         .before_all = MinimalPHF_Before,
         .after_all = MinimalPHF_After,
         .after_each = nextWord,

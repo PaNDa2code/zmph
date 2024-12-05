@@ -70,7 +70,6 @@ if __name__ == "__main__":
     for key in data.keys():
         expicted_value = data[key]
         lookup_value = mph.PerfectLookup(key)
-        # print(f"{key}:{lookup_value}")
         if expicted_value != lookup_value:
             print("mismatch lookup\n")
             exit(1)

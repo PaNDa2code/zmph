@@ -2,12 +2,14 @@
 
 
 ```
+➜ zig build benchmark --release=fast
 benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995      
 -----------------------------------------------------------------------------------------------------------------------------
-Perfect-hash build     15       631.08ms       42.072ms ± 1.239ms     (40.737ms ... 45.121ms)      42.511ms   45.121ms   45.121ms  
-Perfect-hash Lookup    65535    1.007ms        15ns ± 68ns            (13ns ... 17.449us)          16ns       17ns       17ns      
-StaticStringMap build  255      627.59ms       2.461ms ± 169.721us    (2.31ms ... 3.131ms)         2.474ms    3.074ms    3.104ms   
-StaticStringMap Lookup 65535    605.688ms      9.242us ± 6.855us      (24ns ... 77.5us)            13.596us   28.77us    34.501us  
-StringHashMap build    127      809.626ms      6.375ms ± 623.466us    (5.703ms ... 10.114ms)       6.367ms    9.938ms    10.114ms  
-StringHashMap Lookup   65535    1.337ms        20ns ± 106ns           (16ns ... 17.331us)          22ns       29ns       31ns
+zmph build             15       1.186s         79.101ms ± 4.169ms     (75.016ms ... 90.168ms)      81.962ms   90.168ms   90.168ms  
+zmph Lookup            65535    1.743ms        26ns ± 1ns             (24ns ... 216ns)             27ns       29ns       29ns      
+StaticStringMap build  511      1.888s         3.694ms ± 236.867us    (3.533ms ... 5.339ms)        3.721ms    4.636ms    5.038ms   
+StaticStringMap Lookup 65535    1.066s         16.277us ± 11.8us      (43ns ... 192.855us)         24.351us   45.514us   49.221us  
+StringHashMap build    127      1.367s         10.767ms ± 638.794us   (9.723ms ... 13.462ms)       10.975ms   13.425ms   13.462ms  
+StringHashMap Lookup   65535    2.668ms        40ns ± 52ns            (32ns ... 9.163us)           44ns       62ns       126ns     
+
 ```
