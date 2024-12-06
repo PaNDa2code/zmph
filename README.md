@@ -18,12 +18,12 @@ StringHashMap Lookup   65535    2.668ms        40ns ± 52ns            (32ns ...
 
 inside your project directory run:
 
-```
+```bash
 zig fetch --save git+https://github.com/PaNDa2code/zmph
 ```
 
 then in `build.zig` file add `zmph` as import for project excutable:
-```
+```zig
 const zmph = b.dependency("zmph", .{});
 
 const exe = b.addExecutable(.{
@@ -34,7 +34,7 @@ exe.root_module.addImport("zmph", zmph.module("zmph"));
 ```
 
 now you can use it inside your project
-```
+```zig
 const std = @import("std");
 const zmph = @import("zmph");
 
