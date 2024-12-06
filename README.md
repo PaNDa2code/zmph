@@ -13,3 +13,48 @@ StringHashMap build    127      1.367s         10.767ms ± 638.794us   (9.723ms 
 StringHashMap Lookup   65535    2.668ms        40ns ± 52ns            (32ns ... 9.163us)           44ns       62ns       126ns     
 
 ```
+
+## How to use
+
+inside your project directory run:
+
+```
+zig fetch --save git+https://github.com/PaNDa2code/zmph
+```
+
+then in `build.zig` file add `zmph` as import for project excutable:
+```
+const zmph = b.dependency("zmph", .{});
+
+const exe = b.addExecutable(.{
+    ...
+});
+
+exe.root_module.addImport("zmph", zmph.module("zmph"));
+```
+
+now you can use it inside your project
+```
+const std = @import("std");
+const zmph = @import("zmph");
+
+pub fn main() !void {
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    defer _ = gpa.deinit();
+
+    const allocator = gpa.allocator();
+
+    const map = try zmph.MinimalPerfectHashMap([]const u8, u64).init(allocator, kv_list);
+    defer map.deinit();
+
+    for (kv_list) |kv| {
+        std.debug.print("{s}:{any}\n", .{ kv[0], map.get(kv[0]) });
+    }
+}
+
+const kv_list = [2]struct { []const u8, u64 }{
+    .{ "Hello", 0 },
+    .{ "World", 1 },
+};
+
+```
