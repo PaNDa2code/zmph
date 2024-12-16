@@ -33,7 +33,7 @@ fn staticList(comptime T: type, comptime n: usize, comptime fill: T) type {
     };
 }
 
-pub fn MinimalPerfectHashMap(K: type, V: type) type {
+pub fn MinimalPerfectHashMap(comptime K: type, comptime V: type) type {
     return struct {
         const Self = @This();
         const v_fill: V = undefined;

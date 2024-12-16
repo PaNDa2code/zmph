@@ -58,3 +58,24 @@ const kv_list = [2]struct { []const u8, u64 }{
 };
 
 ```
+
+you can also define a comptime hash map using `comptimeInit`
+```zig
+const std = @import("std");
+const zmph = @import("zmph");
+
+
+pub fn main() !void {
+
+    const map = comptime zmph.MinimalPerfectHashMap([]const u8, u64).comptimeInit(kv_list);
+
+    for (kv_list) |kv| {
+        std.debug.print("{s}:{any}\n", .{ kv[0], map.get(kv[0]) });
+    }
+}
+
+const kv_list = [2]struct { []const u8, u64 }{
+    .{ "Hello", 0 },
+    .{ "World", 1 },
+};
+```
