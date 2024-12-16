@@ -10,10 +10,14 @@ fn staticList(comptime T: type, comptime n: usize, comptime fill: T) type {
             return lhs.len > rhs.len;
         }
         fn append(self: *@This(), value: T) void {
+            if (self.len >= self.items.len)
+                @compileError("using .append() method on fully staticList");
             self.items[self.len] = value;
             self.len += 1;
         }
         fn pop(self: *@This()) T {
+            if (self.len == 0)
+                @compileError("using .pop() method on empty staticList");
             self.len -= 1;
             return self.items[self.len];
         }
@@ -34,6 +38,7 @@ pub fn MinimalPerfectHashMap(K: type, V: type) type {
         const Self = @This();
         const v_fill: V = undefined;
         const max_usize: comptime_int = std.math.maxInt(usize);
+        const max_isize: comptime_int = std.math.maxInt(isize);
 
         const empty_disps = [0]isize{};
         const empty_keys = [0]K{};
@@ -53,18 +58,18 @@ pub fn MinimalPerfectHashMap(K: type, V: type) type {
 
         kvs: *const KVs = &empty_kvs,
         len: usize = 0,
-        displacement_table: []isize = &empty_disps,
+        displacement_table: [*]const isize = &empty_disps,
         allocator: Allocator = undefined,
 
         inline fn hash(key: K, seed: u32, mod_value: usize) usize {
-            return std.hash.Murmur3_32.hashWithSeed(std.mem.asBytes(&key), seed) % mod_value;
+            return std.hash.Murmur3_32.hashWithSeed(key, seed) % mod_value;
         }
 
         fn sortBucketsDec(_: void, lhs: ArrayList(usize), rhs: ArrayList(usize)) bool {
             return lhs.items.len > rhs.items.len;
         }
 
-        // O(N²) runtime initial
+        /// `O(N²)` runtime initial
         pub fn init(allocator: Allocator, kv_list: anytype) !Self {
             const n = kv_list.len;
 
@@ -122,8 +127,8 @@ pub fn MinimalPerfectHashMap(K: type, V: type) type {
                 displacement_table[hash(kv_list[bucket.items[0]].@"0", 0, n)] = @intCast(displacement);
 
                 for (0..bucket.items.len) |i| {
+                    keys[slots.items[i]] = kv_list[bucket.items[i]].@"0";
                     if (V != void) {
-                        keys[slots.items[i]] = kv_list[bucket.items[i]].@"0";
                         values[slots.items[i]] = kv_list[bucket.items[i]].@"1";
                     }
                 }
@@ -157,9 +162,102 @@ pub fn MinimalPerfectHashMap(K: type, V: type) type {
             return .{
                 .kvs = final_kvs,
                 .allocator = allocator,
-                .displacement_table = displacement_table,
+                .displacement_table = @ptrCast(displacement_table.ptr),
                 .len = n,
             };
+        }
+
+        /// Same as `init` but runs only in compile time returning a constent hash map
+        pub fn comptimeInit(comptime kv_list: anytype) Self {
+            comptime {
+                const n = kv_list.len;
+
+                // O(N²)
+                @setEvalBranchQuota(n * n);
+
+                var keys: [n]K = [1]K{undefined} ** n;
+                var values: [n]?V = [1]?V{null} ** n;
+                var displacement_table: [n]isize = [1]isize{max_isize} ** n;
+
+                const bucketType = staticList(usize, n, 0);
+
+                var buckets: [n]bucketType = [1]bucketType{.{}} ** n;
+
+                for (kv_list, 0..) |kv, key_index| {
+                    buckets[hash(kv.@"0", 0, n)].append(key_index);
+                }
+
+                std.mem.sort(bucketType, &buckets, {}, bucketType.decOrder);
+
+                var slots = staticList(usize, n, 0){};
+
+                var bucket_index: usize = 0;
+
+                for (buckets) |bucket| {
+                    if (bucket.len <= 1) break;
+                    slots.clear();
+                    var displacement: u32 = 1;
+                    var item: usize = 0;
+                    while (item < bucket.len) {
+                        const slot = hash(kv_list[bucket.items[item]].@"0", displacement, n);
+                        if (values[slot] != null or std.mem.containsAtLeast(usize, slots.items[0..slots.len], 1, &.{slot})) {
+                            slots.clear();
+                            displacement += 1;
+                            item = 0;
+                        } else {
+                            slots.append(slot);
+                            item += 1;
+                        }
+                    }
+
+                    displacement_table[hash(kv_list[bucket.items[0]].@"0", 0, n)] = @intCast(displacement);
+
+                    for (0..bucket.len) |i| {
+                        keys[slots.items[i]] = kv_list[bucket.items[i]].@"0";
+                        if (V != void) {
+                            values[slots.items[i]] = kv_list[bucket.items[i]].@"1";
+                        }
+                    }
+                    bucket_index += 1;
+                }
+
+                var free_slots = staticList(usize, n, max_usize){};
+
+                for (values, 0..) |value, i| {
+                    if (value == null)
+                        free_slots.append(i);
+                }
+
+                for (buckets[bucket_index..]) |bucket| {
+                    if (bucket.len == 0) break;
+                    const slot = free_slots.pop();
+                    displacement_table[hash(kv_list[bucket.items[0]].@"0", 0, n)] = -@as(isize, @intCast(slot)) - 1;
+                    keys[slot] = kv_list[bucket.items[0]].@"0";
+                    if (V != void)
+                        values[slot] = kv_list[bucket.items[0]].@"1";
+                }
+
+                for (values) |value| {
+                    if (value == null) {
+                        @compileError("There is a null value");
+                    }
+                }
+
+                const final_keys = keys;
+                const final_values = values;
+                const final_displacement_table = displacement_table;
+                const kvs = KVs{
+                    .keys = &final_keys,
+                    .values = &final_values,
+                    .len = n,
+                };
+
+                return .{
+                    .kvs = &kvs,
+                    .displacement_table = @ptrCast(&final_displacement_table),
+                    .len = n,
+                };
+            }
         }
 
         pub fn deinit(self: *const Self) void {
@@ -176,7 +274,7 @@ pub fn MinimalPerfectHashMap(K: type, V: type) type {
             else
                 hash(key, @intCast(displacement), self.len);
 
-            if (std.mem.eql(u8, std.mem.asBytes(&key), std.mem.asBytes(&self.kvs.keys[index]))) {
+            if (std.mem.eql(u8, key, self.kvs.keys[index])) {
                 return index;
             } else {
                 return null;
@@ -193,6 +291,13 @@ test "MinimalPerfectHashMap" {
     const map = try MinimalPerfectHashMap([]const u8, []const u8).init(std.testing.allocator, &words);
     defer map.deinit();
 
+    for (words) |word| {
+        try std.testing.expectEqualStrings(word[0], map.get(word[0]).?);
+    }
+}
+
+test "MinimalPerfectComptimeHashMap" {
+    const map = comptime MinimalPerfectHashMap([]const u8, []const u8).comptimeInit(words);
     for (words) |word| {
         try std.testing.expectEqualStrings(word[0], map.get(word[0]).?);
     }
