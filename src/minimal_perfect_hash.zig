@@ -98,7 +98,7 @@ pub fn MinimalPerfectHashMap(comptime K: type, comptime V: type) type {
                 allocator.free(buckets);
             }
 
-            for (kv_list, 0..) |kv, key_index| {
+            inline for (kv_list, 0..) |kv, key_index| {
                 try buckets[hash(kv.@"0", 0, n)].append(key_index);
             }
 
@@ -118,7 +118,9 @@ pub fn MinimalPerfectHashMap(comptime K: type, comptime V: type) type {
                 var item: usize = 0;
 
                 while (item < bucket.items.len) {
-                    const slot = hash(kv_list[bucket.items[item]].@"0", displacement, n);
+                    const kv_index = bucket.items[item];
+                    const kv = kv_list[kv_index];
+                    const slot = hash(kv.@"0", displacement, n);
 
                     if (value_setted[slot] or std.mem.containsAtLeast(usize, slots.items, 1, &.{slot})) {
                         slots.clearRetainingCapacity();
@@ -302,7 +304,7 @@ test "MinimalPerfectHashMap" {
 
 test "MinimalPerfectComptimeHashMap" {
     const map = MinimalPerfectHashMap([]const u8, []const u8).comptimeInit(words);
-    for (words) |word| {
+    inline for (words) |word| {
         try std.testing.expectEqualStrings(word[0], map.get(word[0]).?);
     }
 }
