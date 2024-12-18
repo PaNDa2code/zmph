@@ -62,10 +62,10 @@ pub fn MinimalPerfectHashMap(comptime K: type, comptime V: type) type {
         allocator: Allocator = undefined,
 
         inline fn hash(key: K, seed: u32, mod_value: usize) usize {
-            if (K == []const u8)
-                return std.hash.Murmur3_32.hashWithSeed(key, seed) % mod_value;
-
-            return std.hash.Murmur3_32.hashWithSeed(std.mem.asBytes(&key), seed) % mod_value;
+            return if (K == []const u8)
+                std.hash.Murmur3_32.hashWithSeed(key, seed) % mod_value
+            else
+                std.hash.Murmur3_32.hashWithSeed(std.mem.asBytes(&key), seed) % mod_value;
         }
 
         fn sortBucketsDec(_: void, lhs: ArrayList(usize), rhs: ArrayList(usize)) bool {
@@ -98,7 +98,7 @@ pub fn MinimalPerfectHashMap(comptime K: type, comptime V: type) type {
                 allocator.free(buckets);
             }
 
-            inline for (kv_list, 0..) |kv, key_index| {
+            for (kv_list, 0..) |kv, key_index| {
                 try buckets[hash(kv.@"0", 0, n)].append(key_index);
             }
 
@@ -137,9 +137,9 @@ pub fn MinimalPerfectHashMap(comptime K: type, comptime V: type) type {
 
                 for (0..bucket.items.len) |i| {
                     keys[slots.items[i]] = kv_list[bucket.items[i]].@"0";
+                    value_setted[slots.items[i]] = true;
                     if (V != void) {
                         values[slots.items[i]] = kv_list[bucket.items[i]].@"1";
-                        value_setted[slots.items[i]] = true;
                     }
                 }
                 bucket_index += 1;
@@ -189,7 +189,7 @@ pub fn MinimalPerfectHashMap(comptime K: type, comptime V: type) type {
                 var keys: [n]K = [1]K{undefined} ** n;
                 var values: [n]V = [1]V{undefined} ** n;
                 var value_setted: [n]bool = [1]bool{false} ** n;
-                var displacement_table: [n]isize = [1]isize{max_isize} ** n;
+                var displacement_table: [n]isize = [1]isize{0} ** n;
 
                 const bucketType = staticList(usize, n, 0);
 
@@ -226,9 +226,9 @@ pub fn MinimalPerfectHashMap(comptime K: type, comptime V: type) type {
 
                     for (0..bucket.len) |i| {
                         keys[slots.items[i]] = kv_list[bucket.items[i]].@"0";
+                        value_setted[slots.items[i]] = true;
                         if (V != void) {
                             values[slots.items[i]] = kv_list[bucket.items[i]].@"1";
-                            value_setted[slots.items[i]] = true;
                         }
                     }
                     bucket_index += 1;
@@ -287,6 +287,10 @@ pub fn MinimalPerfectHashMap(comptime K: type, comptime V: type) type {
             return null;
         }
 
+        pub fn has(self: *const Self, key: K) bool {
+            return self.getIndex(key) != null;
+        }
+
         pub fn get(self: *const Self, key: K) ?V {
             return self.kvs.values[self.getIndex(key) orelse return null];
         }
@@ -304,7 +308,7 @@ test "MinimalPerfectHashMap" {
 
 test "MinimalPerfectComptimeHashMap" {
     const map = MinimalPerfectHashMap([]const u8, []const u8).comptimeInit(words);
-    inline for (words) |word| {
+    for (words) |word| {
         try std.testing.expectEqualStrings(word[0], map.get(word[0]).?);
     }
 }

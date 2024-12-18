@@ -4,8 +4,10 @@ const zmph = @import("zmph");
 pub fn main() !void {
     const map = zmph.MinimalPerfectHashMap([]const u8, u64).comptimeInit(kv_list);
 
-    for (kv_list) |kv| {
-        std.debug.print("{s}:{?s}\n", .{ kv[0], map.get(kv[0]) });
+    const value = map.get("Hello");
+
+    if (value) |v| {
+        std.debug.print("{}\n", .{v});
     }
 }
 
