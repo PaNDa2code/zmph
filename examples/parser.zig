@@ -4,7 +4,7 @@ const zmph = @import("zmph");
 pub fn main() !void {
     const source_code =
         "let x = 42 in if x > 10 then print x else if print 0 ";
-    const keywords = zmph.MinimalPerfectHashMap([]const u8, KeywordsEnum).comptimeInit(keyword_list);
+    const keywords = zmph.FrozenHashMap([]const u8, KeywordsEnum).comptimeInit(keyword_list);
 
     var tokinzer = std.mem.tokenizeAny(u8, source_code, " ");
 

@@ -4,12 +4,12 @@ const zbench = @import("zbench");
 
 const zmph = @import("zmph");
 
-const MinimalPerfectHashMap = zmph.MinimalPerfectHashMap;
+const FrozenHashMap = zmph.FrozenHashMap;
 
 var word_list: []struct { []const u8, void } = undefined;
 var word_idx: usize = 0;
 
-var mphf: MinimalPerfectHashMap([]const u8, void) = undefined;
+var mphf: FrozenHashMap([]const u8, void) = undefined;
 var static_map: std.static_string_map.StaticStringMap(void) = .{};
 var hash_map: std.StringHashMap(void) = undefined;
 

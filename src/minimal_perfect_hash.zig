@@ -33,7 +33,7 @@ fn staticList(comptime T: type, comptime n: usize, comptime fill: T) type {
     };
 }
 
-pub fn MinimalPerfectHashMap(comptime K: type, comptime V: type) type {
+pub fn FrozenHashMap(comptime K: type, comptime V: type) type {
     return struct {
         const Self = @This();
         const v_fill: V = undefined;
@@ -298,7 +298,7 @@ pub fn MinimalPerfectHashMap(comptime K: type, comptime V: type) type {
 }
 
 test "MinimalPerfectHashMap" {
-    const map = try MinimalPerfectHashMap([]const u8, []const u8).init(std.testing.allocator, &words);
+    const map = try FrozenHashMap([]const u8, []const u8).init(std.testing.allocator, &words);
     defer map.deinit();
 
     for (words) |word| {
@@ -307,7 +307,7 @@ test "MinimalPerfectHashMap" {
 }
 
 test "MinimalPerfectComptimeHashMap" {
-    const map = MinimalPerfectHashMap([]const u8, []const u8).comptimeInit(words);
+    const map = FrozenHashMap([]const u8, []const u8).comptimeInit(words);
     for (words) |word| {
         try std.testing.expectEqualStrings(word[0], map.get(word[0]).?);
     }
