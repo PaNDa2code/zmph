@@ -2,15 +2,19 @@
 
 
 ```
+➜ lscpu | grep "Model name"
+
+Model name:                      Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz
+
 ➜ zig build benchmark --release=fast
 benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995      
 -----------------------------------------------------------------------------------------------------------------------------
-zmph build             15       1.026s         68.466ms ± 11.425ms    (53.18ms ... 88.944ms)       80.24ms    88.944ms   88.944ms  
-zmph Lookup            65535    1.301ms        19ns ± 10ns            (14ns ... 1.524us)           23ns       28ns       33ns      
-StaticStringMap build  1023     1.962s         1.918ms ± 139.463us    (1.791ms ... 2.744ms)        1.943ms    2.417ms    2.503ms   
-StaticStringMap Lookup 65535    766.088ms      11.689us ± 8.357us     (25ns ... 106.524us)         16.859us   35.86us    44.843us  
-StringHashMap build    255      1.476s         5.791ms ± 468.839us    (5.37ms ... 8.905ms)         5.968ms    8.531ms    8.607ms   
-StringHashMap Lookup   65535    1.541ms        23ns ± 226ns           (16ns ... 19.731us)          23ns       30ns       34ns      
+zmph build             63       2.01s          31.909ms ± 899.684us   (30.921ms ... 35.033ms)      32.069ms   35.033ms   35.033ms  
+zmph Lookup            100000   1.922ms        19ns ± 96ns            (14ns ... 25.791us)          22ns       27ns       30ns      
+StaticStringMap build  894      1.985s         2.221ms ± 63.571us     (2.171ms ... 3.021ms)        2.239ms    2.426ms    2.53ms    
+StaticStringMap Lookup 100000   1.078s         10.78us ± 7.558us      (23ns ... 120.186us)         16.202us   28.691us   31.683us  
+StringHashMap build    285      2.001s         7.022ms ± 118.496us    (6.807ms ... 8.191ms)        7.043ms    7.384ms    7.749ms   
+StringHashMap Lookup   100000   6.785ms        67ns ± 150ns           (22ns ... 26.765us)          68ns       417ns      536ns 
 ```
 
 ## How to use

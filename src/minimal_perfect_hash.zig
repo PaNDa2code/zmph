@@ -156,7 +156,7 @@ pub fn FrozenHashMap(comptime K: type, comptime V: type) type {
             // Handle buckets with one key
             for (buckets[bucket_index..]) |bucket| {
                 if (bucket.items.len == 0) break;
-                const slot = free_slots.pop();
+                const slot = free_slots.pop().?;
                 displacement_table[hash(kv_list[bucket.items[0]].@"0", 0, n)] = -@as(isize, @intCast(slot)) - 1;
                 keys[slot] = kv_list[bucket.items[0]].@"0";
                 values[slot] = kv_list[bucket.items[0]].@"1";
