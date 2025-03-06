@@ -22,6 +22,17 @@ StringHashMap build    285      2.001s         7.022ms ± 118.496us    (6.807ms 
 StringHashMap Lookup   100000   6.785ms        67ns ± 150ns           (22ns ... 26.765us)          68ns       417ns      536ns 
 ```
 
+### Benchmark Environment:
+The following benchmark results were obtained on my machine:
+- CPU: Intel Core i7-8750H @ 2.20GHz
+- OS: Linux Debian 
+- Zig Version: 0.14.0-dev.3237+ddff1fa4c
+
+### Observations
+- ZMPH Lookup (19ns avg) is the fastest lookup implementation.
+- StaticStringMap Lookup (10.78µs avg) is significantly slower (~500x slower than ZMPH).
+- StringHashMap Lookup (67ns avg) is about 3.5x slower than ZMPH but still much faster than StaticStringMap.
+
 ## How to use
 
 inside your project directory run:
