@@ -28,10 +28,25 @@ The following benchmark results were obtained on my machine:
 - OS: Linux Debian 
 - Zig Version: 0.14.0-dev.3237+ddff1fa4c
 
-### Observations
+### Observations:
+
+#### Lookup Performance
+
 - ZMPH Lookup (19ns avg) is the fastest lookup implementation.
 - StaticStringMap Lookup (10.78µs avg) is significantly slower (~500x slower than ZMPH).
 - StringHashMap Lookup (67ns avg) is about 3.5x slower than ZMPH but still much faster than StaticStringMap.
+
+#### Build Performance
+
+- ZMPH Build: Average 31.91ms per run.
+- StaticStringMap Build: Average 2.22ms per run.
+- StringHashMap Build: Average 7.02ms per run.
+
+### Conclusion
+
+- ZMPH delivers the best runtime lookup speed, making it highly efficient for applications where lookup performance is critical.
+- However, its build process is notably slower—approximately 14x slower than StaticStringMap and 4.5x slower than StringHashMap.
+- This highlights a trade-off: you gain faster lookups at the expense of longer compile-time build durations.
 
 ## How to use
 
