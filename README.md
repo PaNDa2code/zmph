@@ -1,5 +1,10 @@
-# Minimal perfect hash function generator
+# Zig minimal prefect hash-map
 
+ZMPH is a Zig module that helps you create a fast, compile-time, minimal [perfect hash map](https://en.wikipedia.org/wiki/Perfect_hash_function). It leverages Zig's comptime feature to generate efficient, collision-free mappings at compile time, making lookups extremely fast.
+
+read more
+- [Minimal Perfect Hash Function University of Waterloo](https://cs.uwaterloo.ca/~dstinson/papers/aticihash.pdf)
+- [Throw away the keys: Easy, Minimal Perfect Hashing](https://stevehanov.ca/blog/?id=119)
 
 ```
 ➜ lscpu | grep "Model name"
