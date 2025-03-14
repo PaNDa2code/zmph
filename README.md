@@ -33,7 +33,7 @@ The following benchmark results were obtained on my machine:
 #### Lookup Performance
 
 - ZMPH Lookup (19ns avg) is the fastest lookup implementation.
-- StaticStringMap Lookup (10.78µs avg) is significantly slower (~500x slower than ZMPH).
+- The StaticStringMap lookup (10.78µs avg) is significantly slower (~500x slower than ZMPH), which is reasonable since it uses a binary search algorithm.
 - StringHashMap Lookup (67ns avg) is about 3.5x slower than ZMPH but still much faster than StaticStringMap.
 
 #### Build Performance
