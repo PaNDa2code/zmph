@@ -7,20 +7,23 @@ read more
 - [Throw away the keys: Easy, Minimal Perfect Hashing](https://stevehanov.ca/blog/?id=119)
 
 ```
+
 ➜ lscpu | grep "Model name"
 
 Model name:                      Intel(R) Core(TM) i7-8750H CPU @ 2.20GHz
 
 ➜ zig build benchmark --release=fast
-benchmark              runs     total time     time/run (avg ± σ)     (min ... max)                p75        p99        p995      
------------------------------------------------------------------------------------------------------------------------------
-zmph build             63       2.01s          31.909ms ± 899.684us   (30.921ms ... 35.033ms)      32.069ms   35.033ms   35.033ms  
-zmph Lookup            100000   1.922ms        19ns ± 96ns            (14ns ... 25.791us)          22ns       27ns       30ns      
-StaticStringMap build  894      1.985s         2.221ms ± 63.571us     (2.171ms ... 3.021ms)        2.239ms    2.426ms    2.53ms    
-StaticStringMap Lookup 100000   1.078s         10.78us ± 7.558us      (23ns ... 120.186us)         16.202us   28.691us   31.683us  
-StringHashMap build    285      2.001s         7.022ms ± 118.496us    (6.807ms ... 8.191ms)        7.043ms    7.384ms    7.749ms   
-StringHashMap Lookup   100000   6.785ms        67ns ± 150ns           (22ns ... 26.765us)          68ns       417ns      536ns 
-```
+benchmark              runs     total time     time/run (avg ± σ)    (min ... max)                p75        p99        p995
+----------------------------------------------------------------------------------------------------------------------------
+
+zmph build             69       1.992s         28.872ms ± 617.072us  (28.361ms ... 32.443ms)      28.947ms   32.443ms   32.443ms
+zmph Lookup            100000   2.653ms        26ns ± 4ns            (18ns ... 96ns)              30ns       38ns       40ns
+StaticStringMap build  987      2.002s         2.029ms ± 56.593us    (1.96ms ... 2.385ms)         2.044ms    2.243ms    2.318ms
+StaticStringMap Lookup 100000   1.04s          10.4us ± 7.359us      (22ns ... 89.198us)          15.693us   27.708us   30.958us
+StringHashMap build    296      1.805s         6.1ms ± 83.67us       (5.972ms ... 6.595ms)        6.139ms    6.401ms    6.419ms
+StringHashMap Lookup   100000   4.506ms        45ns ± 152ns          (22ns ... 29.795us)          49ns       106ns      123ns
+
+````
 
 ### Benchmark Environment:
 The following benchmark results were obtained on my machine:
@@ -32,21 +35,24 @@ The following benchmark results were obtained on my machine:
 
 #### Lookup Performance
 
-- ZMPH Lookup (19ns avg) is the fastest lookup implementation.
-- The StaticStringMap lookup (10.78µs avg) is significantly slower (~500x slower than ZMPH), which is reasonable since it uses a binary search algorithm.
-- StringHashMap Lookup (67ns avg) is about 3.5x slower than ZMPH but still much faster than StaticStringMap.
+- **ZMPH Lookup (26ns avg)** is the fastest.  
+- **StaticStringMap Lookup (10.4µs avg)** is ~400× slower than ZMPH, which makes sense since it’s doing a binary search.  
+- **StringHashMap Lookup (45ns avg)** is ~1.7× slower than ZMPH but still orders of magnitude faster than StaticStringMap.
 
 #### Build Performance
 
-- ZMPH Build: Average 31.91ms per run.
-- StaticStringMap Build: Average 2.22ms per run.
-- StringHashMap Build: Average 7.02ms per run.
+- **ZMPH Build:** ~28.9ms per run.  
+- **StaticStringMap Build:** ~2.03ms per run.  
+- **StringHashMap Build:** ~6.1ms per run.  
+
+This means ZMPH is ~14× slower to build than StaticStringMap and ~5× slower than StringHashMap.
 
 ### Conclusion
 
-- ZMPH delivers the best runtime lookup speed, making it highly efficient for applications where lookup performance is critical.
-- However, its build process is notably slower—approximately 14x slower than StaticStringMap and 4.5x slower than StringHashMap.
-- This highlights a trade-off: you gain faster lookups at the expense of longer compile-time build durations.
+- **ZMPH provides the fastest runtime lookups**, which makes it ideal when query performance is critical.  
+- The trade-off is **higher build cost** at compile time compared to other map types.  
+- For use cases with **frequent lookups and rare builds**, ZMPH is the clear winner.  
+- For cases where build time matters more (e.g. massive tables generated at build), StaticStringMap may be more attractive.
 
 ## How to use
 
@@ -54,9 +60,10 @@ inside your project directory run:
 
 ```bash
 zig fetch --save git+https://github.com/PaNDa2code/zmph
-```
+````
 
 then in `build.zig` file add `zmph` as import for project excutable:
+
 ```zig
 const zmph = b.dependency("zmph", .{});
 
@@ -68,6 +75,7 @@ exe.root_module.addImport("zmph", zmph.module("zmph"));
 ```
 
 now you can use it inside your project
+
 ```zig
 const std = @import("std");
 const zmph = @import("zmph");
@@ -90,10 +98,10 @@ const kv_list = [2]struct { []const u8, u64 }{
     .{ "Hello", 0 },
     .{ "World", 1 },
 };
-
 ```
 
 you can also define a comptime hash map using `comptimeInit`
+
 ```zig
 const std = @import("std");
 const zmph = @import("zmph");
@@ -114,4 +122,3 @@ const kv_list = .{
 ```
 
 for more examples look at [examples](./examples/)
-
