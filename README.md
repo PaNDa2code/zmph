@@ -86,7 +86,7 @@ pub fn main() !void {
 
     const allocator = gpa.allocator();
 
-    const map = try zmph.FrozenHashMap([]const u8, u64).init(allocator, kv_list);
+    const map = try zmph.PerfectHashMap([]const u8, u64).init(allocator, kv_list);
     defer map.deinit();
 
     for (kv_list) |kv| {
@@ -107,7 +107,7 @@ const std = @import("std");
 const zmph = @import("zmph");
 
 pub fn main() !void {
-    const map = zmph.FrozenHashMap([]const u8, u64).comptimeInit(kv_list);
+    const map = zmph.PerfectHashMap([]const u8, u64).comptimeInit(kv_list);
 
     for (kv_list) |kv| {
         std.debug.print("{s}:{any}\n", .{ kv[0], map.get(kv[0]) });
