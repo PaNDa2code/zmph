@@ -298,7 +298,7 @@ pub fn PerfectHashMap(comptime K: type, comptime V: type) type {
 }
 
 test "MinimalPerfectHashMap" {
-    const map = try PerfictHashMap([]const u8, []const u8).init(std.testing.allocator, &words);
+    const map = try PerfectHashMap([]const u8, []const u8).init(std.testing.allocator, &words);
     defer map.deinit();
 
     for (words) |word| {
@@ -307,7 +307,7 @@ test "MinimalPerfectHashMap" {
 }
 
 test "MinimalPerfectComptimeHashMap" {
-    const map = PerfictHashMap([]const u8, []const u8).comptimeInit(words);
+    const map = PerfectHashMap([]const u8, []const u8).comptimeInit(words);
     for (words) |word| {
         try std.testing.expectEqualStrings(word[0], map.get(word[0]).?);
     }
