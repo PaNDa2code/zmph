@@ -89,23 +89,23 @@ pub fn FrozenHashMap(comptime K: type, comptime V: type) type {
 
             var buckets = try allocator.alloc(ArrayList(usize), n);
 
-            @memset(buckets, @TypeOf(buckets[0]).init(allocator));
+            @memset(buckets, try @TypeOf(buckets[0]).initCapacity(allocator, 0));
 
             defer {
-                for (buckets) |bucket| {
-                    bucket.deinit();
+                for (buckets) |*bucket| {
+                    bucket.deinit(allocator);
                 }
                 allocator.free(buckets);
             }
 
             for (kv_list, 0..) |kv, key_index| {
-                try buckets[hash(kv.@"0", 0, n)].append(key_index);
+                try buckets[hash(kv.@"0", 0, n)].append(allocator, key_index);
             }
 
             std.mem.sort(ArrayList(usize), buckets, {}, sortBucketsDec);
 
             var slots = try ArrayList(usize).initCapacity(allocator, n);
-            defer slots.deinit();
+            defer slots.deinit(allocator);
 
             var bucket_index: usize = 0;
 
@@ -127,7 +127,7 @@ pub fn FrozenHashMap(comptime K: type, comptime V: type) type {
                         displacement += 1;
                         item = 0;
                     } else {
-                        slots.append(slot) catch unreachable;
+                        slots.append(allocator, slot) catch unreachable;
                         item += 1;
                     }
                 }
@@ -145,12 +145,12 @@ pub fn FrozenHashMap(comptime K: type, comptime V: type) type {
                 bucket_index += 1;
             }
 
-            var free_slots = ArrayList(usize).init(allocator);
-            defer free_slots.deinit();
+            var free_slots = try ArrayList(usize).initCapacity(allocator, 0);
+            defer free_slots.deinit(allocator);
 
             for (value_setted, 0..) |value_is_set, i| {
                 if (!value_is_set)
-                    try free_slots.append(i);
+                    try free_slots.append(allocator, i);
             }
 
             // Handle buckets with one key
@@ -196,7 +196,7 @@ pub fn FrozenHashMap(comptime K: type, comptime V: type) type {
                 var buckets: [n]bucketType = [1]bucketType{.{}} ** n;
 
                 for (kv_list, 0..) |kv, key_index| {
-                    buckets[hash(kv.@"0", 0, n)].append(key_index);
+                    buckets[hash(kv.@"0", 0, n)].append(Allocator, key_index);
                 }
 
                 std.mem.sort(bucketType, &buckets, {}, bucketType.decOrder);

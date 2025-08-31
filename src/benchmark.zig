@@ -31,11 +31,11 @@ pub fn main() !void {
     defer allocator.free(buffer);
 
     var iter = std.mem.tokenizeAny(u8, buffer, "\n");
-    var words = std.ArrayList(struct { []const u8, void }).init(allocator);
-    defer words.deinit();
+    var words = try std.ArrayList(struct { []const u8, void }).initCapacity(allocator,0);
+    defer words.deinit(allocator);
 
     while (iter.next()) |word| {
-        try words.append(.{ word, {} });
+        try words.append(allocator, .{ word, {} });
     }
 
     word_list = words.items;
@@ -67,7 +67,11 @@ pub fn main() !void {
         .after_all = StdHashmapAfter,
         .after_each = nextWord,
     } });
-    try bench.run(std.io.getStdOut().writer());
+    var buf: [1024]u8 = undefined;
+    var stdout = std.fs.File.stdout().writer(&buf);
+    const writer = &stdout.interface;
+    try bench.run(writer);
+    try writer.flush();
 }
 
 fn nextWord() void {

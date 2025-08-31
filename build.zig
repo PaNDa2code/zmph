@@ -17,16 +17,17 @@ pub fn build(b: *std.Build) void {
     const benchmark_step = b.step("benchmark", "Run benchmarks");
 
     const unit_tests = b.addTest(.{
-        .root_source_file = b.path("src/minimal_perfect_hash.zig"),
-        .target = target,
-        .optimize = optimize,
+        .name = "unit_tests",
+        .root_module = module,
     });
 
     const lib_benchmark = b.addExecutable(.{
         .name = "benchmark",
-        .root_source_file = b.path("src/benchmark.zig"),
-        .target = target,
-        .optimize = optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src/benchmark.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
     });
 
     const run_lib_unit_tests = b.addRunArtifact(unit_tests);
