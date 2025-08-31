@@ -29,7 +29,7 @@ StringHashMap Lookup   100000   4.506ms        45ns ± 152ns          (22ns ... 
 The following benchmark results were obtained on my machine:
 - CPU: Intel Core i7-8750H @ 2.20GHz
 - OS: Linux Debian 
-- Zig Version: 0.14.0-dev.3237+ddff1fa4c
+- Zig Version: 0.15.1
 
 ### Observations:
 
