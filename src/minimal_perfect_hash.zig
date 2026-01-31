@@ -196,7 +196,7 @@ pub fn PerfectHashMap(comptime K: type, comptime V: type) type {
                 var buckets: [n]bucketType = [1]bucketType{.{}} ** n;
 
                 for (kv_list, 0..) |kv, key_index| {
-                    buckets[hash(kv.@"0", 0, n)].append(Allocator, key_index);
+                    buckets[hash(kv.@"0", 0, n)].append(key_index);
                 }
 
                 std.mem.sort(bucketType, &buckets, {}, bucketType.decOrder);
